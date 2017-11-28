@@ -1,12 +1,15 @@
 
+
 .data
 
-string_invalid: .asciiz "NaN"
+string_NaN: .asciiz "NaN"
 string_tooLarge: .asciiz "too large"
 string_comma: .asciiz ","
 
 buff: .space 1001 # space for input string
-array: .space 8    #10 element integer array
+array: .space 8    #8 element integer array for storing individually converted hex characters
+
+.text
 
 .globl main
 #s0 is for number of characters counted
@@ -15,8 +18,9 @@ array: .space 8    #10 element integer array
 #s3 is set to 1 if a space is seen after a character
 #s4 is for
 #s5 is for
-#s6 is for
+#s6 is for integer storage
 #s7 is set to 1 for NaN
+#a2 is set to character dec euivalent
 main:
 
 	la $a0,buff# input string address
@@ -108,9 +112,44 @@ subprogram_2:
 		addi $s1, $s1, 1         # increment $s1 by one, to point to the next element in the array
 		
 	calc_dec:
-		beq $s7, 1, NaN
+		li $t7, 16
+		la $s1, array	#put array to s1
+		beq $s7, 1, Not_a_num
+		beq $s0, 0, functions
 #if array counter =0 then move to next hex segment
 #load byte from array
+		lb $t1, 0($s1)           # load a byte from the array into $t1
+		
+		hex_power:
+			beq $s0, 0, int_add 
+			addi $t5, $t5, 1
+			addi $s0, $s0, -1
+			move $t8, $s0	#copy int count to t8 for use in finding power
+			pow:
+  				li    $t0, 1
+  				li    $t1, 0
+			pow_loop:
+  				blez   $t8, hex_power
+  				mult  $t1, $t7
+  				mflo  $t1
+ 		 		mult  $t0, $t7
+  				mflo  $t0
+  				mfhi  $t2
+  				add   $t1, $t1, $t2
+  				addi  $t8, $t8, -1
+  				j     pow_loop
+\
+  				
+			bne $s0, $t5, hex_power	#b if power not equal to the number of characters
+				
+		
+			mul $t1, 
+			addi $s1, $s1, 1         # increment $s1 by one, to point to the next element in the array
+		
+		int_add:
+			add $s6, s6, $t1
+				
+				
 #multiply that by 16 to the power of the number of $s0 -1  
 #-1 from $s0
 #
@@ -131,25 +170,25 @@ subprogram_3:
 	la $a0,stack #load from stack into argument for integer output
 	li $v0,1	#print integer
 	syscall
-	li $v0,10	#exit
+	li $v0, 10	#exit
 	syscall
 	j functions
 #displays unsigned decimal integer stack is used to pass parameters into subprogram
 
 tooLarge:
-	la $a0,string_tooLarge 
+	la $a0, string_tooLarge 
 	li $v0,4	#print too large
 	syscall
 	j functions
 
-NaN:
-	la $a0,string_invalid 
+Not_a_num:
+	la $a0, string_NaN 
 	li $v0,4	#print NaN
 	syscall
 	j functions
 
 Comma:
-	la $a0,string_comma 
+	la $a0, string_comma 
 	li $v0,4	#print NaN
 	syscall
 	j functions
